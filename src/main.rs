@@ -13,21 +13,18 @@ use data::{Config, MRRequest, ProjectResponse};
 use error::AppError;
 use git2::{PushOptions, RemoteCallbacks, Repository};
 use std::env;
-use std::fs::{self, File};
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::fs::{self};
 use tokio::runtime::Runtime;
 
 mod data;
 mod error;
 mod http;
 
-const SECRETS_FILE: &str = "./.secret";
-const CONFIG_FILE: &str = "./config.toml";
+const CONFIG_FILE: &str = ".glpm/config.toml";
 
 type Result<T> = std::result::Result<T, AppError>;
 
-fn git_credentials_callback(
+fn git_credentials_ssh_callback(
     _user: &str,
     user_from_url: Option<&str>,
     cred: git2::CredentialType,
@@ -37,8 +34,9 @@ fn git_credentials_callback(
     if cred.contains(git2::CredentialType::USERNAME) {
         return git2::Cred::username(user)
     }
-    let key_file = env::var("SSH_KEY_FILE").expect("no ssh key file provided");
-    let passphrase = env::var("SSH_PASS").expect("no ssh pass provided");
+    let config = get_config().expect("Could not read config");
+    let key_file = &config.ssh_key_file.unwrap();
+    let passphrase = &config.ssh_passphrase.unwrap();
     git2::Cred::ssh_key(
         user,
         None,
@@ -47,22 +45,20 @@ fn git_credentials_callback(
     )
 }
 
-fn get_access_token() -> Result<String> {
-    let file = File::open(SECRETS_FILE).expect("Could not read access token file");
-    let buf = BufReader::new(file);
-    let lines: Vec<String> = buf
-        .lines()
-        .take(1)
-        .map(std::result::Result::unwrap_or_default)
-        .collect();
-    if lines[0].is_empty() {
-        return Err(AppError::AccessTokenNotFoundError());
-    }
-    Ok(lines[0].to_string())
+fn git_credentials_pwd_callback(
+    _user: &str,
+    _user_from_url: Option<&str>,
+    _cred: git2::CredentialType,
+) -> std::result::Result<git2::Cred, git2::Error> {
+    let config = get_config().expect("Could not read config");
+    git2::Cred::userpass_plaintext(&config.user.unwrap(), &config.password.unwrap())
 }
 
 fn get_config() -> Result<Config> {
-    let data = fs::read_to_string(CONFIG_FILE)?;
+    let config_file: &str =
+        &(env::var("HOME").expect("Cannot find HOME environment variable") + "/" + CONFIG_FILE);
+
+    let data = fs::read_to_string(config_file)?;
     let config: Config = toml::from_str(&data)?;
     Ok(config)
 }
@@ -98,11 +94,11 @@ fn create_mr(
     target_branch: &str,
     current_branch: &str,
 ) {
-    let rt = Runtime::new().expect("tokio runtime can be initialized");
+    let rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
         let projects = match http::fetch_projects(&config, &access_token, "projects").await {
             Ok(v) => v,
-            Err(e) => return println!("could not fetch projects, reason: {}", e)
+            Err(e) => return println!("Could not fetch projects, reason: {}", e)
         };
         let mut actual_project: Option<&ProjectResponse> = None;
         for p in &projects {
@@ -115,7 +111,7 @@ fn create_mr(
                 break;
             }
         }
-        let project = actual_project.expect("couldn't find this project on gitlab");
+        let project = actual_project.expect("Couldn't find this project on gitlab");
         let mr_req = MRRequest {
             access_token,
             project,
@@ -166,24 +162,32 @@ fn main() -> Result<()> {
     let description = matches.value_of("description").unwrap_or("");
     let target_branch = matches.value_of("target_branch").unwrap_or("master");
 
-    let access_token = get_access_token().expect("could not get access token");
-    let config = get_config().expect("could not read config");
+    let config = get_config().expect("Could not read config file");
+    let access_token = config
+        .clone()
+        .apikey
+        .expect("Could not get access token")
+        .to_string();
 
     if config.group.is_none() && config.user.is_none() {
         panic!("Group or User for Gitlab need to be configured")
     }
 
-    let repo = Repository::open("./").expect("current folder is not a git repository");
-    let current_branch = get_current_branch(&repo).expect("could not get current branch");
+    let repo = Repository::open("./").expect("Current folder is not a git repository");
+    let current_branch = get_current_branch(&repo).expect("Could not get current branch");
     let mut remote = repo
         .find_remote("origin")
-        .expect("origin remote could not be found");
+        .expect("Origin remote could not be found");
 
     let mut push_opts = PushOptions::new();
     let mut callbacks = RemoteCallbacks::new();
-    let actual_remote = String::from(remote.url().expect("could not get remote URL"));
+    let actual_remote = String::from(remote.url().expect("Could not get remote URL"));
     let branch_clone = current_branch.clone();
-    callbacks.credentials(git_credentials_callback);
+    if config.password.is_none() {
+        callbacks.credentials(git_credentials_ssh_callback);
+    } else {
+        callbacks.credentials(git_credentials_pwd_callback);
+    }
     callbacks.push_update_reference(move |refname, _| {
         println!("Successfully Pushed: {:?}", refname);
         create_mr(
@@ -203,6 +207,6 @@ fn main() -> Result<()> {
             &[&format!("refs/heads/{}", current_branch.to_string())],
             Some(&mut push_opts),
         )
-        .expect("could not push to origin");
+        .expect("Could not push to origin");
     Ok(())
 }

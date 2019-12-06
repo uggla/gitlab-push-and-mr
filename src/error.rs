@@ -4,7 +4,6 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum AppError {
-    AccessTokenNotFoundError(),
     IOError(std::io::Error),
     TomlParseError(toml::de::Error),
     GitError(String),
@@ -14,7 +13,6 @@ pub enum AppError {
 impl Error for AppError {
     fn description(&self) -> &str {
         match *self {
-            AppError::AccessTokenNotFoundError(..) => "access token not found",
             AppError::IOError(..) => "io error",
             AppError::TomlParseError(..) => "toml parse error",
             AppError::GitError(..) => "git error",
@@ -23,7 +21,6 @@ impl Error for AppError {
     }
     fn cause(&self) -> Option<&dyn Error> {
         match *self {
-            AppError::AccessTokenNotFoundError(..) => None,
             AppError::GitError(..) => None,
             AppError::IOError(ref e) => Some(e),
             AppError::TomlParseError(ref e) => Some(e),
@@ -36,7 +33,6 @@ impl fmt::Display for AppError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}: ", self.description())?;
         match *self {
-            AppError::AccessTokenNotFoundError(..) => write!(f, "access token not found"),
             AppError::GitError(ref v) => write!(f, "git error: {}", v),
             AppError::IOError(ref e) => write!(f, "{}", e),
             AppError::TomlParseError(ref e) => write!(f, "{}", e),

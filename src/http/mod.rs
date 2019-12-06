@@ -105,15 +105,16 @@ async fn fetch(
     let client = Client::builder().build::<_, hyper::Body>(https);
     let group = config.group.as_ref();
     let user = config.user.as_ref();
+    let host = config.host.as_ref();
     let uri = match group {
         Some(v) => format!(
-            "https://gitlab.com/api/v4/groups/{}/{}?per_page={}",
-            v, domain, per_page
+            "{}/api/v4/groups/{}/{}?per_page={}",
+            host.unwrap_or(&"https://gitlab.com".to_string()), v, domain, per_page
         ),
         None => match user {
             Some(u) => format!(
-                "https://gitlab.com/api/v4/users/{}/{}?per_page={}",
-                u, domain, per_page
+                "{}/api/v4/users/{}/{}?per_page={}",
+                host.unwrap_or(&"https://gitlab.com".to_string()), u, domain, per_page
             ),
             None => "invalid url".to_string(),
         },
@@ -162,14 +163,15 @@ async fn fetch_paged(
     client: &hyper::Client<HttpsConnector<HttpConnector>>,
     page: i32,
 ) -> Result<Bytes> {
+    let host = config.host.as_ref();
     let group = match config.group.as_ref() {
         Some(v) => v,
         None => return Err(HttpError::ConfigError())
     };
     let req = Request::builder()
         .uri(format!(
-            "https://gitlab.com/api/v4/groups/{}/{}?per_page=20&page={}",
-            group, domain, page
+            "{}/api/v4/groups/{}/{}?per_page=20&page={}",
+            host.unwrap_or(&"https://gitlab.com".to_string()), group, domain, page
         ))
         .header("PRIVATE-TOKEN", access_token)
         .body(Body::empty())?;
@@ -184,9 +186,10 @@ async fn fetch_paged(
 pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<String> {
     let https = HttpsConnector::new()?;
     let client = Client::builder().build::<_, hyper::Body>(https);
+    let host = config.host.as_ref();
     let uri = format!(
-        "https://gitlab.com/api/v4/projects/{}/merge_requests",
-        payload.project.id
+        "{}/api/v4/projects/{}/merge_requests",
+        host.unwrap_or(&"https://gitlab.com".to_string()), payload.project.id
     );
     let labels = config
         .mr_labels

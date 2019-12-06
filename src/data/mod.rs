@@ -49,7 +49,12 @@ pub struct MRPayload<'a> {
 pub struct Config {
     pub group: Option<String>,
     pub user: Option<String>,
+    pub password: Option<String>,
+    pub apikey: Option<String>,
+    pub ssh_key_file: Option<String>,
+    pub ssh_passphrase: Option<String>,
     pub mr_labels: Option<Vec<String>>,
+    pub host: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
