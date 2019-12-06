@@ -4,10 +4,18 @@ Push and create an MR automatically using gitlab API and GIT.
 
 You need a Gitlab account and a project there, plus an API key.
 
-# Run
+## Version
+
+This project is a fork of https://github.com/zupzup/gitlab-push-and-mr customized to my needs.
+
+Changes compared to original code:
+* All parameters are specified in a toml configuration file (describe below).
+* Push phase authentication can be done using either user and password or ssh keys.
+* Merge request can be assign to someone as an option.
+
+## Run
 
 All parameters must be configured into $HOME/.glpm/config.toml file:
-
 ```toml
 user = "user_name"
 password = "user_password"
@@ -18,10 +26,10 @@ mr_labels = ["DevOps"]
 host = "http://gitlab.example.com"
 ```
 
-If password key is defined, user and password will be used to perform the authentication. Otherwise, it will use ssh private key and passphare configuration.
+If password key is defined, user and password will be used to perform the authentication. Otherwise, it will use ssh_key_file and ssh_passphrase configuration keys.
 
-Execute
-
+## Usage example
+Execute:
 ```bash
 // run tool
 cargo run -- -d "Some Description" -t "Some Title"
