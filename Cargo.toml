@@ -1,6 +1,6 @@
 [package]
 name = "gitlab-push-and-mr"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Mario Zupan <mario@zupzup.org>", "René Ribaud <rene.ribaud@cgi.com>"]
 edition = "2018"
 
@@ -19,5 +19,4 @@ bytes = "0.4.12"
 toml = "0.5"
 git2 = "0.9.1"
 clap = "2.33.0"
-
 

@@ -1,4 +1,4 @@
-use crate::data::{Config, MRPayload, MRRequest, MRResponse, ProjectResponse};
+use crate::data::{Config, MRPayload, MRRequest, MRResponse, ProjectResponse, User};
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use futures::{future};
@@ -183,6 +183,31 @@ async fn fetch_paged(
     return Ok(body.into_bytes());
 }
 
+pub async fn fetch_users(
+    config: &Config,
+    access_token: &str,
+    assignee: &str,
+) -> Result<Vec<User>> {
+    let https = HttpsConnector::new()?;
+    let client = Client::builder().build::<_, hyper::Body>(https);
+    let host = config.host.as_ref();
+    let req = Request::builder()
+        .uri(format!(
+            "{}/api/v4/users?search={}",
+            host.unwrap_or(&"https://gitlab.com".to_string()), assignee
+        ))
+        .header("PRIVATE-TOKEN", access_token)
+        .body(Body::empty())?;
+    // println!("{:?}", &req);
+    let res = client.request(req).await?;
+    if !res.status().is_success() {
+        return Err(HttpError::UnsuccessFulError(res.status()));
+    }
+    let body = res.into_body().try_concat().await?;
+    let data: Vec<User> = serde_json::from_slice(&body)?;
+    return Ok(data);
+}
+
 pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<String> {
     let https = HttpsConnector::new()?;
     let client = Client::builder().build::<_, hyper::Body>(https);
@@ -207,6 +232,7 @@ pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<Strin
         labels: &labels,
         squash: true,
         remove_source_branch: true,
+        assignee_id : payload.assignee_id,
     };
     let json = serde_json::to_string(&mr_payload)?;
     let req = Request::builder()
