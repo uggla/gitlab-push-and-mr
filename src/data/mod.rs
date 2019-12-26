@@ -28,6 +28,13 @@ pub struct Author {
     pub username: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct User {
+    pub id: u64,
+    pub name: String,
+    pub username: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct MRResponse {
     pub web_url: String,
@@ -43,6 +50,7 @@ pub struct MRPayload<'a> {
     pub labels: &'a str,
     pub remove_source_branch: bool,
     pub squash: bool,
+    pub assignee_id: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -65,4 +73,5 @@ pub struct MRRequest<'a> {
     pub description: &'a str,
     pub source_branch: &'a str,
     pub target_branch: &'a str,
+    pub assignee_id: Option<u64>,
 }

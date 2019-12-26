@@ -93,9 +93,41 @@ fn create_mr(
     description: &str,
     target_branch: &str,
     current_branch: &str,
+    assignee: &str,
 ) {
     let rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
+        // let assignee_id:u32 = match assignee.parse() {
+        //         Ok(id) => id,
+        //         _ => {},
+        // };
+        let mut assignee_id:Option<u64> = None;
+        let parsed_id = assignee.parse::<u64>();
+        if let Ok(id) = parsed_id { assignee_id = Some(id)};
+
+        if !assignee.is_empty() && assignee_id == None {
+            let users = match http::fetch_users(&config, &access_token, &assignee).await {
+                Ok(u) => u,
+                Err(e) => return println!("Could not fetch users, reason: {}", e)
+            };
+            if users.len()> 1 {
+                println!("Available users:");
+                println!("----------------");
+                println!("");
+                for user in users{
+                    println!("id: {}",user.id);
+                    println!("User: {}",user.name);
+                    println!("Username: {}",user.username);
+                    println!("--------------------");
+                }
+                return println!("Assignee is not unique, please refine your query or use an id");
+            }
+            else {
+                assignee_id = Some(users[0].id);
+            }
+        }
+
+
         let projects = match http::fetch_projects(&config, &access_token, "projects").await {
             Ok(v) => v,
             Err(e) => return println!("Could not fetch projects, reason: {}", e)
@@ -119,6 +151,7 @@ fn create_mr(
             description,
             source_branch: current_branch,
             target_branch,
+            assignee_id,
         };
         match http::create_mr(&mr_req, &config).await {
             Ok(v) => println!("Pushed and Created MR Successfully - URL: {}", v),
@@ -129,7 +162,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.0")
+        .version("1.0.0")
         .arg(
             Arg::with_name("description")
                 .short("d")
@@ -155,6 +188,14 @@ fn main() -> Result<()> {
                 .help("The Merge-Request target branch")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("assignee")
+                .short("a")
+                .long("assignee")
+                .value_name("ASSIGNEE")
+                .help("The Merge-Request assignee user")
+                .takes_value(true),
+        )
         .get_matches();
     let title = matches
         .value_of("title")
@@ -173,6 +214,7 @@ fn main() -> Result<()> {
         panic!("Group or User for Gitlab need to be configured")
     }
 
+    let assignee = matches.value_of("assignee").unwrap_or("");
     let repo = Repository::open("./").expect("Current folder is not a git repository");
     let current_branch = get_current_branch(&repo).expect("Could not get current branch");
     let mut remote = repo
@@ -198,6 +240,7 @@ fn main() -> Result<()> {
             &description,
             &target_branch,
             &branch_clone,
+            &assignee
         );
         Ok(())
     });
