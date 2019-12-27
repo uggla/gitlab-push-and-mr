@@ -3,7 +3,6 @@ extern crate hyper_tls;
 #[macro_use]
 extern crate serde_derive;
 extern crate clap;
-extern crate futures;
 extern crate serde;
 extern crate serde_json;
 extern crate toml;
@@ -95,12 +94,8 @@ fn create_mr(
     current_branch: &str,
     assignee: &str,
 ) {
-    let rt = Runtime::new().expect("Tokio runtime can be initialized");
+    let mut rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
-        // let assignee_id:u32 = match assignee.parse() {
-        //         Ok(id) => id,
-        //         _ => {},
-        // };
         let mut assignee_id:Option<u64> = None;
         let parsed_id = assignee.parse::<u64>();
         if let Ok(id) = parsed_id { assignee_id = Some(id)};
@@ -162,7 +157,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.0.0")
+        .version("1.1.0")
         .arg(
             Arg::with_name("description")
                 .short("d")

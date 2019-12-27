@@ -2,11 +2,10 @@ use crate::data::{Config, MRPayload, MRRequest, MRResponse, ProjectResponse, Use
 use hyper::{Body, Client, Method, Request};
 use hyper_tls::HttpsConnector;
 use futures::{future};
-use futures_util::TryStreamExt;
 use hyper::client::HttpConnector;
 use std::error::Error;
 use std::fmt;
-use bytes::Bytes;
+use hyper::body::Bytes;
 
 type Result<T> = std::result::Result<T, HttpError>;
 
@@ -15,7 +14,6 @@ pub enum HttpError {
     UnsuccessFulError(hyper::StatusCode),
     ConfigError(),
     HyperError(hyper::Error),
-    HyperTLSError(hyper_tls::Error),
     HyperHttpError(hyper::http::Error),
     JsonError(serde_json::Error),
 }
@@ -26,7 +24,6 @@ impl Error for HttpError {
             HttpError::UnsuccessFulError(..) => "unsuccessful request",
             HttpError::ConfigError(..) => "invalid config provided - no group",
             HttpError::HyperError(..) => "hyper error",
-            HttpError::HyperTLSError(..) => "hyper tls error",
             HttpError::HyperHttpError(..) => "hyper http error",
             HttpError::JsonError(..) => "serde json error",
         }
@@ -36,7 +33,6 @@ impl Error for HttpError {
             HttpError::UnsuccessFulError(..) => None,
             HttpError::ConfigError(..) => None,
             HttpError::HyperError(ref e) => Some(e),
-            HttpError::HyperTLSError(ref e) => Some(e),
             HttpError::HyperHttpError(ref e) => Some(e),
             HttpError::JsonError(ref e) => Some(e),
         }
@@ -50,7 +46,6 @@ impl fmt::Display for HttpError {
                         HttpError::UnsuccessFulError(ref v) => write!(f, "unsuccessful request: {}", v),
                         HttpError::ConfigError(..) => write!(f, "invalid config found - no group"),
                         HttpError::HyperError(ref e) => write!(f, "{}", e),
-                        HttpError::HyperTLSError(ref e) => write!(f, "{}", e),
                         HttpError::HyperHttpError(ref e) => write!(f, "{}", e),
                         HttpError::JsonError(ref e) => write!(f, "{}", e),
                     }
@@ -66,12 +61,6 @@ impl From<hyper::Error> for HttpError {
 impl From<hyper::http::Error> for HttpError {
     fn from(e: hyper::http::Error) -> Self {
         HttpError::HyperHttpError(e)
-    }
-}
-
-impl From<hyper_tls::Error> for HttpError {
-    fn from(e: hyper_tls::Error) -> Self {
-        HttpError::HyperTLSError(e)
     }
 }
 
@@ -101,7 +90,7 @@ async fn fetch(
     domain: &str,
     per_page: i32,
 ) -> Result<Vec<Bytes>> {
-    let https = HttpsConnector::new()?;
+    let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
     let group = config.group.as_ref();
     let user = config.user.as_ref();
@@ -139,8 +128,8 @@ async fn fetch(
         Err(_) => 0,
     };
     let mut result: Vec<Bytes> = Vec::new();
-    let body = res.into_body().try_concat().await?;
-    result.push(body.into_bytes());
+    let body = hyper::body::to_bytes(res.into_body()).await?;
+    result.push(body);
     let mut futrs = Vec::new();
     for page in 2..=p {
         futrs.push(fetch_paged(&config, &access_token, &domain, &client, page));
@@ -179,8 +168,8 @@ async fn fetch_paged(
     if !res.status().is_success() {
         return Err(HttpError::UnsuccessFulError(res.status()));
     }
-    let body = res.into_body().try_concat().await?;
-    return Ok(body.into_bytes());
+    let body = hyper::body::to_bytes(res.into_body()).await?;
+    return Ok(body);
 }
 
 pub async fn fetch_users(
@@ -188,7 +177,7 @@ pub async fn fetch_users(
     access_token: &str,
     assignee: &str,
 ) -> Result<Vec<User>> {
-    let https = HttpsConnector::new()?;
+    let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
     let host = config.host.as_ref();
     let req = Request::builder()
@@ -203,13 +192,13 @@ pub async fn fetch_users(
     if !res.status().is_success() {
         return Err(HttpError::UnsuccessFulError(res.status()));
     }
-    let body = res.into_body().try_concat().await?;
+    let body = hyper::body::to_bytes(res.into_body()).await?;
     let data: Vec<User> = serde_json::from_slice(&body)?;
     return Ok(data);
 }
 
 pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<String> {
-    let https = HttpsConnector::new()?;
+    let https = HttpsConnector::new();
     let client = Client::builder().build::<_, hyper::Body>(https);
     let host = config.host.as_ref();
     let uri = format!(
@@ -245,8 +234,7 @@ pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<Strin
     if !res.status().is_success() {
         return Err(HttpError::UnsuccessFulError(res.status()));
     }
-    let body = res.into_body().try_concat().await?;
-    let bytes = body.into_bytes();
-    let data: MRResponse = serde_json::from_slice(&bytes)?;
+    let body = hyper::body::to_bytes(res.into_body()).await?;
+    let data: MRResponse = serde_json::from_slice(&body)?;
     Ok(data.web_url)
 }
