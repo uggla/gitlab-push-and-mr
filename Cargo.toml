@@ -1,22 +1,18 @@
 [package]
 name = "gitlab-push-and-mr"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["Mario Zupan <mario@zupzup.org>", "René Ribaud <rene.ribaud@cgi.com>"]
 edition = "2018"
 
 [dependencies]
-hyper = { version = "0.13.0-a.4", features = ["unstable-stream"]}
-hyper-tls = { version = "0.4.0-a.4" }
-tokio = { version = "=0.2.0-alpha.6" }
-futures-preview = { version = "0.3.0-alpha.19", features = ["async-await"] }
-futures-core-preview = "=0.3.0-alpha.19"
-futures-io-preview = "=0.3.0-alpha.19"
-futures-util-preview = "=0.3.0-alpha.19"
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-bytes = "0.4.12"
-toml = "0.5"
-git2 = "0.9.1"
+hyper = "0.13.1"
+hyper-tls = "0.4.0"
+tokio = "0.2.6"
+futures = "0.3.1"
+serde = "1.0.104"
+serde_derive = "1.0.104"
+serde_json = "1.0.44"
+bytes = "0.5.3"
+toml = "0.5.5"
+git2 = "0.11.0"
 clap = "2.33.0"
-
