@@ -12,6 +12,7 @@ Changes compared to original code:
 * All parameters are specified in a toml configuration file (describe below).
 * Push phase authentication can be done using either user and password or ssh keys.
 * Merge request can be assign to someone as an option.
+* Update dependencies to the latest available stable revision
 
 ## Run
 
