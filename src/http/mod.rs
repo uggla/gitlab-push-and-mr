@@ -142,7 +142,7 @@ async fn fetch(
         };
         result.push(str);
     }
-    return Ok(result);
+    Ok(result)
 }
 
 async fn fetch_paged(
@@ -169,7 +169,7 @@ async fn fetch_paged(
         return Err(HttpError::UnsuccessFulError(res.status()));
     }
     let body = hyper::body::to_bytes(res.into_body()).await?;
-    return Ok(body);
+    Ok(body)
 }
 
 pub async fn fetch_users(
@@ -194,7 +194,7 @@ pub async fn fetch_users(
     }
     let body = hyper::body::to_bytes(res.into_body()).await?;
     let data: Vec<User> = serde_json::from_slice(&body)?;
-    return Ok(data);
+    Ok(data)
 }
 
 pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<String> {

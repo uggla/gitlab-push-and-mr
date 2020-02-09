@@ -84,6 +84,7 @@ fn get_current_branch(repo: &Repository) -> Result<String> {
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn create_mr(
     config: &Config,
     actual_remote: &str,
@@ -110,7 +111,7 @@ fn create_mr(
                 x if x >1 => {
                 println!("Available users:");
                 println!("----------------");
-                println!("");
+                println!();
                 for user in users{
                     println!("id: {}",user.id);
                     println!("User: {}",user.name);
@@ -164,7 +165,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.2.0")
+        .version("1.3.0")
         .arg(
             Arg::with_name("description")
                 .short("d")
@@ -209,8 +210,8 @@ fn main() -> Result<()> {
     let access_token = config
         .clone()
         .apikey
-        .expect("Could not get access token")
-        .to_string();
+        .expect("Could not get access token");
+
 
     if config.group.is_none() && config.user.is_none() {
         panic!("Group or User for Gitlab need to be configured")
@@ -249,7 +250,7 @@ fn main() -> Result<()> {
     push_opts.remote_callbacks(callbacks);
     remote
         .push(
-            &[&format!("refs/heads/{}", current_branch.to_string())],
+            &[&format!("refs/heads/{}", current_branch)],
             Some(&mut push_opts),
         )
         .expect("Could not push to origin");
