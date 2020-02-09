@@ -100,12 +100,14 @@ fn create_mr(
         let parsed_id = assignee.parse::<u64>();
         if let Ok(id) = parsed_id { assignee_id = Some(id)};
 
+        // Check if we pass an assignee
         if !assignee.is_empty() && assignee_id == None {
             let users = match http::fetch_users(&config, &access_token, &assignee).await {
                 Ok(u) => u,
                 Err(e) => return println!("Could not fetch users, reason: {}", e)
             };
-            if users.len()> 1 {
+            match users.len() {
+                x if x >1 => {
                 println!("Available users:");
                 println!("----------------");
                 println!("");
@@ -115,10 +117,15 @@ fn create_mr(
                     println!("Username: {}",user.username);
                     println!("--------------------");
                 }
-                return println!("Assignee is not unique, please refine your query or use an id");
-            }
-            else {
-                assignee_id = Some(users[0].id);
+                    return println!("Assignee is not unique, please refine your query or use an id");
+                },
+                x if x == 1 => {
+                    assignee_id = Some(users[0].id);
+                },
+                x if x < 1 => {
+                    return println!("Assignee not found, please check assignee name or id");
+                },
+                _ => {} // Just to make the compiler happy
             }
         }
 
@@ -157,7 +164,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.1.0")
+        .version("1.2.0")
         .arg(
             Arg::with_name("description")
                 .short("d")
