@@ -83,6 +83,7 @@ jobs:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: latest
         title: Gitlab-push-and-mr
+        prerelease: false
         files: |
           gitlab-push-and-mr-windows.zip
           gitlab-push-and-mr-linux-x86_64.tar.gz
