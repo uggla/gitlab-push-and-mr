@@ -5,7 +5,7 @@ authors = ["Mario Zupan <mario@zupzup.org>", "René Ribaud <rene.ribaud@cgi.com>
 edition = "2018"
 
 [dependencies]
-hyper = "0.13.1"
+hyper = "0.14.11"
 hyper-tls = "0.4.0"
 tokio = "0.2.6"
 futures = "0.3.1"
