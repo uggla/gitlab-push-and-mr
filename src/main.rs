@@ -31,7 +31,7 @@ fn git_credentials_ssh_callback(
     let user = user_from_url.unwrap_or("git");
 
     if cred.contains(git2::CredentialType::USERNAME) {
-        return git2::Cred::username(user)
+        return git2::Cred::username(user);
     }
     let config = get_config().expect("Could not read config");
     let key_file = &config.ssh_key_file.unwrap();
@@ -40,7 +40,7 @@ fn git_credentials_ssh_callback(
         user,
         None,
         std::path::Path::new(&key_file),
-        Some(&passphrase),
+        Some(passphrase),
     )
 }
 
@@ -65,15 +65,13 @@ fn get_config() -> Result<Config> {
 fn get_current_branch(repo: &Repository) -> Result<String> {
     let branches = repo.branches(None).expect("can't list branches");
     branches.fold(
-        Err(AppError::GitError(String::from("current branch not found"))),
+        Err(AppError::Git(String::from("current branch not found"))),
         |acc, branch| {
-            let b =
-                branch.map_err(|_| AppError::GitError(String::from("current branch not found")))?;
+            let b = branch.map_err(|_| AppError::Git(String::from("current branch not found")))?;
             if b.0.is_head() {
-                let name = b
-                    .0
-                    .name()
-                    .map_err(|_| AppError::GitError(String::from("current branch not found")))?;
+                let name =
+                    b.0.name()
+                        .map_err(|_| AppError::Git(String::from("current branch not found")))?;
                 return match name {
                     Some(n) => Ok(n.to_string()),
                     None => return acc,
@@ -97,43 +95,46 @@ fn create_mr(
 ) {
     let mut rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
-        let mut assignee_id:Option<u64> = None;
+        let mut assignee_id: Option<u64> = None;
         let parsed_id = assignee.parse::<u64>();
-        if let Ok(id) = parsed_id { assignee_id = Some(id)};
+        if let Ok(id) = parsed_id {
+            assignee_id = Some(id)
+        };
 
         // Check if we pass an assignee
         if !assignee.is_empty() && assignee_id == None {
-            let users = match http::fetch_users(&config, &access_token, &assignee).await {
+            let users = match http::fetch_users(config, access_token, assignee).await {
                 Ok(u) => u,
-                Err(e) => return println!("Could not fetch users, reason: {}", e)
+                Err(e) => return println!("Could not fetch users, reason: {}", e),
             };
             match users.len() {
-                x if x >1 => {
-                println!("Available users:");
-                println!("----------------");
-                println!();
-                for user in users{
-                    println!("id: {}",user.id);
-                    println!("User: {}",user.name);
-                    println!("Username: {}",user.username);
-                    println!("--------------------");
+                x if x > 1 => {
+                    println!("Available users:");
+                    println!("----------------");
+                    println!();
+                    for user in users {
+                        println!("id: {}", user.id);
+                        println!("User: {}", user.name);
+                        println!("Username: {}", user.username);
+                        println!("--------------------");
+                    }
+                    return println!(
+                        "Assignee is not unique, please refine your query or use an id"
+                    );
                 }
-                    return println!("Assignee is not unique, please refine your query or use an id");
-                },
                 x if x == 1 => {
                     assignee_id = Some(users[0].id);
-                },
+                }
                 x if x < 1 => {
                     return println!("Assignee not found, please check assignee name or id");
-                },
+                }
                 _ => {} // Just to make the compiler happy
             }
         }
 
-
-        let projects = match http::fetch_projects(&config, &access_token, "projects").await {
+        let projects = match http::fetch_projects(config, access_token, "projects").await {
             Ok(v) => v,
-            Err(e) => return println!("Could not fetch projects, reason: {}", e)
+            Err(e) => return println!("Could not fetch projects, reason: {}", e),
         };
         let mut actual_project: Option<&ProjectResponse> = None;
         for p in &projects {
@@ -156,9 +157,9 @@ fn create_mr(
             target_branch,
             assignee_id,
         };
-        match http::create_mr(&mr_req, &config).await {
+        match http::create_mr(&mr_req, config).await {
             Ok(v) => println!("Pushed and Created MR Successfully - URL: {}", v),
-            Err(e) => println!("Could not create MR, Error: {}", e)
+            Err(e) => println!("Could not create MR, Error: {}", e),
         };
     });
 }
@@ -207,11 +208,7 @@ fn main() -> Result<()> {
     let target_branch = matches.value_of("target_branch").unwrap_or("master");
 
     let config = get_config().expect("Could not read config file");
-    let access_token = config
-        .clone()
-        .apikey
-        .expect("Could not get access token");
-
+    let access_token = config.clone().apikey.expect("Could not get access token");
 
     if config.group.is_none() && config.user.is_none() {
         panic!("Group or User for Gitlab need to be configured")
@@ -239,11 +236,11 @@ fn main() -> Result<()> {
             &config,
             &actual_remote,
             &access_token,
-            &title,
-            &description,
-            &target_branch,
+            title,
+            description,
+            target_branch,
             &branch_clone,
-            &assignee
+            assignee,
         );
         Ok(())
     });
