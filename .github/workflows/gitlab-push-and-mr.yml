@@ -1,0 +1,88 @@
+name: gitlab-push-and-mr
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build for target x86_64-unknown-linux-gnu
+      run: cargo build --release
+
+    # - name: Run clippy for target x86_64-unknown-linux-gnu
+    #   run: cargo clippy --release >clippy.output 2>&1 ; cat clippy.output ;! egrep -q "warning|error:" clippy.output
+
+    - name: Run tests
+      run: cargo test --release
+
+    - name: Prepare produced files
+      run: |
+        mkdir -p gitlab-push-and-mr-linux-x86_64
+        cp target/release/gitlab-push-and-mr gitlab-push-and-mr-linux-x86_64
+        tar zcvvf gitlab-push-and-mr-linux-x86_64.tar.gz gitlab-push-and-mr-linux-x86_64
+
+    - name: 'Upload gitlab-push-and-mr-linux-x86_64.tar.gz'
+      uses: actions/upload-artifact@v2
+      with:
+        name: gitlab-push-and-mr-linux-x86_64.tar.gz
+        path: gitlab-push-and-mr-linux-x86_64.tar.gz
+        retention-days: 1
+
+  build_windows:
+    name: Build windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Build for target x86_64-pc-windows-msvc
+      run: cargo build --release
+
+    - name: Run tests
+      run: cargo test --release
+
+    - name: Prepare produced files
+      run: |
+        new-item -Name gitlab-push-and-mr-windows -ItemType directory
+        Copy-Item -Path "target\release\gitlab-push-and-mr.exe" -Destination "gitlab-push-and-mr-windows"
+        Compress-Archive -Path gitlab-push-and-mr-windows -DestinationPath gitlab-push-and-mr-windows.zip
+
+    - name: 'Upload gitlab-push-and-mr-windows.zip'
+      uses: actions/upload-artifact@v2
+      with:
+        name: gitlab-push-and-mr-windows.zip
+        path: gitlab-push-and-mr-windows.zip
+        retention-days: 1
+
+  create_github_release:
+    name: Create Github release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    needs: [build_linux, build_windows]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      name: Create a Github release
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: latest
+        title: Gitlab-push-and-mr
+        files: |
+          gitlab-push-and-mr-windows.zip
+          gitlab-push-and-mr-linux-x86_64.tar.gz
