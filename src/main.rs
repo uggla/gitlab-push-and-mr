@@ -166,7 +166,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.3.0")
+        .version("1.3.1")
         .arg(
             Arg::with_name("description")
                 .short("d")
