@@ -1,19 +1,9 @@
-extern crate hyper;
-extern crate hyper_tls;
-#[macro_use]
-extern crate serde_derive;
-extern crate clap;
-extern crate serde;
-extern crate serde_json;
-extern crate toml;
-
-use clap::crate_version;
-use clap::{App, Arg};
+use clap::{crate_version, App, Arg};
 use data::{Config, MRRequest, ProjectResponse};
 use error::AppError;
 use git2::{PushOptions, RemoteCallbacks, Repository};
 use std::env;
-use std::fs::{self};
+use std::fs;
 use tokio::runtime::Runtime;
 
 mod data;
