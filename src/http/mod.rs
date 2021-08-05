@@ -226,7 +226,7 @@ pub async fn create_mr(payload: &MRRequest<'_>, config: &Config) -> Result<Strin
         target_branch: payload.target_branch,
         source_branch: payload.source_branch,
         labels: &labels,
-        squash: true,
+        squash: false,
         remove_source_branch: true,
         assignee_id: payload.assignee_id,
     };
