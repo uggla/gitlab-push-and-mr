@@ -155,6 +155,24 @@ fn create_mr(
     });
 }
 
+fn find_git_repository() {
+    // Try to climb the tree to find .git repository.
+    // Set the current directory to the directory containing the .git repository.
+    // Usually this is the root of the project.
+    let curdir = env::current_dir().unwrap();
+    let git = curdir.join(".git");
+    if git.exists() {
+        println!("Use repository: {}", git.display());
+    } else {
+        let parent = match curdir.parent() {
+            Some(path) => path,
+            None => panic!("Could not find git repository."),
+        };
+        env::set_current_dir(parent).unwrap();
+        find_git_repository();
+    }
+}
+
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
         .version(crate_version!())
@@ -206,6 +224,7 @@ fn main() -> Result<()> {
     }
 
     let assignee = matches.value_of("assignee").unwrap_or("");
+    find_git_repository();
     let repo = Repository::open("./").expect("Current folder is not a git repository");
     let current_branch = get_current_branch(&repo).expect("Could not get current branch");
     let mut remote = repo
