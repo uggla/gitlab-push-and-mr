@@ -7,6 +7,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate toml;
 
+use clap::crate_version;
 use clap::{App, Arg};
 use data::{Config, MRRequest, ProjectResponse};
 use error::AppError;
@@ -166,7 +167,7 @@ fn create_mr(
 
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
-        .version("1.3.1")
+        .version(crate_version!())
         .arg(
             Arg::with_name("description")
                 .short("d")
