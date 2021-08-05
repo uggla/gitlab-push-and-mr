@@ -84,7 +84,7 @@ fn create_mr(
     current_branch: &str,
     assignee: &str,
 ) {
-    let mut rt = Runtime::new().expect("Tokio runtime can be initialized");
+    let rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
         let mut assignee_id: Option<u64> = None;
         let parsed_id = assignee.parse::<u64>();
