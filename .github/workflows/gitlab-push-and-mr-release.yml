@@ -1,10 +1,10 @@
-name: gitlab-push-and-mr
+name: gitlab-push-and-mr-release
 
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+      - "[0-9].[0-9]+.[0-9]+"
 
 env:
   CARGO_TERM_COLOR: always
@@ -81,9 +81,8 @@ jobs:
       name: Create a Github release
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: latest
         title: Gitlab-push-and-mr
-        prerelease: true 
+        prerelease: false
         files: |
           gitlab-push-and-mr-windows.zip
           gitlab-push-and-mr-linux-x86_64.tar.gz
