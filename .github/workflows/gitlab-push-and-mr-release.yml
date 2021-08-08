@@ -67,7 +67,6 @@ jobs:
   create_github_release:
     name: Create Github release
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
     needs: [build_linux, build_windows]
 
     steps:
