@@ -1,19 +1,9 @@
-extern crate hyper;
-extern crate hyper_tls;
-#[macro_use]
-extern crate serde_derive;
-extern crate clap;
-extern crate serde;
-extern crate serde_json;
-extern crate toml;
-
-use clap::crate_version;
-use clap::{App, Arg};
+use clap::{crate_version, App, Arg};
 use data::{Config, MRRequest, ProjectResponse};
 use error::AppError;
 use git2::{PushOptions, RemoteCallbacks, Repository};
 use std::env;
-use std::fs::{self};
+use std::fs;
 use tokio::runtime::Runtime;
 
 mod data;
@@ -94,7 +84,7 @@ fn create_mr(
     current_branch: &str,
     assignee: &str,
 ) {
-    let mut rt = Runtime::new().expect("Tokio runtime can be initialized");
+    let rt = Runtime::new().expect("Tokio runtime can be initialized");
     rt.block_on(async move {
         let mut assignee_id: Option<u64> = None;
         let parsed_id = assignee.parse::<u64>();
@@ -165,6 +155,24 @@ fn create_mr(
     });
 }
 
+fn find_git_repository() {
+    // Try to climb the tree to find .git repository.
+    // Set the current directory to the directory containing the .git repository.
+    // Usually this is the root of the project.
+    let curdir = env::current_dir().unwrap();
+    let git = curdir.join(".git");
+    if git.exists() {
+        println!("Use repository: {}", git.display());
+    } else {
+        let parent = match curdir.parent() {
+            Some(path) => path,
+            None => panic!("Could not find git repository."),
+        };
+        env::set_current_dir(parent).unwrap();
+        find_git_repository();
+    }
+}
+
 fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
         .version(crate_version!())
@@ -216,6 +224,7 @@ fn main() -> Result<()> {
     }
 
     let assignee = matches.value_of("assignee").unwrap_or("");
+    find_git_repository();
     let repo = Repository::open("./").expect("Current folder is not a git repository");
     let current_branch = get_current_branch(&repo).expect("Could not get current branch");
     let mut remote = repo
