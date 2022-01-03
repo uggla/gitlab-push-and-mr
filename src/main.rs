@@ -177,16 +177,16 @@ fn main() -> Result<()> {
     let matches = App::new("Gitlab Push-and-MR")
         .version(crate_version!())
         .arg(
-            Arg::with_name("description")
-                .short("d")
+            Arg::new("description")
+                .short('d')
                 .long("description")
                 .value_name("DESCRIPTION")
                 .help("The Merge-Request description")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("title")
-                .short("t")
+            Arg::new("title")
+                .short('t')
                 .required(true)
                 .long("title")
                 .value_name("TITLE")
@@ -194,16 +194,16 @@ fn main() -> Result<()> {
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("target_branch")
-                .short("b")
+            Arg::new("target_branch")
+                .short('b')
                 .long("target-branch")
                 .value_name("TARGETBRANCH")
                 .help("The Merge-Request target branch")
                 .takes_value(true),
         )
         .arg(
-            Arg::with_name("assignee")
-                .short("a")
+            Arg::new("assignee")
+                .short('a')
                 .long("assignee")
                 .value_name("ASSIGNEE")
                 .help("The Merge-Request assignee user")
