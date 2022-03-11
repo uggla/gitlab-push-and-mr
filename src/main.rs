@@ -1,4 +1,4 @@
-use clap::{crate_version, App, Arg};
+use clap::{crate_version, Arg, Command};
 use data::{Config, MRRequest, ProjectResponse};
 use error::AppError;
 use git2::{PushOptions, RemoteCallbacks, Repository};
@@ -174,7 +174,7 @@ fn find_git_repository() {
 }
 
 fn main() -> Result<()> {
-    let matches = App::new("Gitlab Push-and-MR")
+    let matches = Command::new("Gitlab Push-and-MR")
         .version(crate_version!())
         .arg(
             Arg::new("description")
