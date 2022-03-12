@@ -1,6 +1,6 @@
 # gitlab-push-and-mr
 
-[![gitlab-push-and-mr-release](https://github.com/uggla/gitlab-push-and-mr/actions/workflows/gitlab-push-and-mr-release.yml/badge.svg)](https://github.com/uggla/gitlab-push-and-mr/actions/workflows/gitlab-push-and-mr-release.yml)
+[![gitlab-push-and-mr](https://github.com/uggla/gitlab-push-and-mr/actions/workflows/gitlab-push-and-mr.yml/badge.svg)](https://github.com/uggla/gitlab-push-and-mr/actions/workflows/gitlab-push-and-mr.yml)
 
 Push and create an MR automatically using gitlab API and GIT.
 
