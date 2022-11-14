@@ -5,7 +5,7 @@ authors = ["Mario Zupan <mario@zupzup.org>", "René Ribaud <rene.ribaud@cgi.com>
 edition = "2018"
 
 [dependencies]
-hyper = { version = "0.14.11", features = ["full"] }
+hyper = { version = "0.14.23", features = ["full"] }
 hyper-tls = "0.5.0"
 tokio = { version = "1.9.0", features = ["full"] }
 futures = "0.3.16"
